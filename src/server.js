@@ -1,26 +1,33 @@
 import http from 'node:http';
+import { json } from './middlewares/json.js';
+import { Database } from './database.js';
 
 // Exemplo de uma rota para criar usuário, preciso enviar nome, email...
 // Através do req que obtenho as informações da requisição, de quem está chamando o servidor
 // res: Devolve uma resposta para quem está chamando nosso servidor
 
-const users = []
+const database = new Database();
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const { method, url } = req;
-  
+
+  await json(req, res)
+
   if (method === 'GET' && url === '/users') {
-    return res
-      .setHeader('Content-type', 'application/json')
-      .end(JSON.stringify(users))
+    const users = database.select('users');
+
+    return res.end(JSON.stringify(users))
   }
 
   if (method === 'POST' && url === '/users') {
-    users.push({
+    const { name, email } = req.body;
+    const users = {
       id: 1,
-      name: 'John Doe',
-      email: 'johndoe@example.com'
-    })
+      name,
+      email
+    }
+
+    database.insert('users', users);
 
     return res.writeHead(201).end()
   }
